@@ -35,14 +35,23 @@ def runOnVideo(video, maxFrames):
 
 
 path_video_folder = 'RAVDESS_frames'
+video_ext = '.mp4'
 result_dataset_path = 'RAVDESS_frames_set'
-every_frame = 1
+every_frame = 5
 subsets = {'train': set(range(1, 19 + 1)),
            'test': set(range(20, 24 + 1))}
 
 # создаем каталог для хранения датасета из кадров видео
 if not os.path.exists(result_dataset_path):
     os.makedirs(result_dataset_path)
+    
+train_path = os.path.join(result_dataset_path, 'train')
+if not os.path.exists(train_path):
+    os.makedirs(train_path)
+    
+test_path = os.path.join(result_dataset_path, 'test')
+if not os.path.exists(test_path):
+    os.makedirs(test_path)
     
 # MediaPipe solution API
 mp_face_detection = mp.solutions.face_detection
@@ -51,7 +60,8 @@ mp_face_detection = mp.solutions.face_detection
 face_detection = mp_face_detection.FaceDetection(
     min_detection_confidence=0.5, model_selection=1)
 
-video_paths = glob.glob(path_video_folder)
+search_path = os.path.join(path_video_folder, f'*{video_ext}')
+video_paths = glob.glob(search_path)
 
 for path_video in video_paths:
     # Extract video properties
@@ -67,6 +77,7 @@ for path_video in video_paths:
     for frame in tqdm.tqdm(video_frames_gen, total=num_frames):
         if frame_num % every_frame == 0:
             video_name = os.path.split(path_video)[-1].split('.')[0]
+            actor_num = int(video_name.split('-')[-1])
             img_height, img_width, channels = frame.shape
 
             # Convert the BGR image to RGB and process it with MediaPipe Face Detection.
@@ -80,8 +91,14 @@ for path_video in video_paths:
                         img_height, img_width, detection)
 
                     frame_name = f'{video_name}_frame_{frame_num}_{idx}.png'
-                    frame_path = os.path.join(result_dataset_path, frame_name)
-                    cv2.imwrite(frame_path, frame[ymin:ymin+height, xmin:xmin+width])
+                    frame_path = ''
+                    if actor_num in subsets['train']:
+                        frame_path = os.path.join(train_path, frame_name)
+                    elif actor_num in subsets['test']:
+                        frame_path = os.path.join(test_path, frame_name)
+                    
+                    if frame_path:
+                        cv2.imwrite(frame_path, frame[ymin:ymin+height, xmin:xmin+width])
 
         frame_num += 1
 
