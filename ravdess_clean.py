@@ -30,13 +30,15 @@ for path in Path(extract_folder).rglob(extension):
 
     select_condition = all(
         [param in cond for param, cond in zip(params, selection_by)])
-    
+
     if select_condition:
         new_path = os.path.join(extract_folder, filename)
         os.rename(path, new_path)
     else:
         os.remove(path)
-        
+
+
+# удаляем пустые папки
 for file in os.scandir(extract_folder):
     if file.is_dir():
         shutil.rmtree(file.path)
