@@ -1,9 +1,12 @@
+# Данный скрипт отбирает видео из всего датасета RAVDESS_frames
+# по указанным параметрам
+
 import os
 from pathlib import Path
 import shutil
 
 
-extract_folder = '/home/admin-gpu/Downloads/datasets/RAVDESS_frames'
+extract_folder = 'RAVDESS_frames'
 extension = '*.mp4'
 
 # параметры отбора видео файлов
