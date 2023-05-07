@@ -17,6 +17,7 @@
 # Демо работы веб-сервиса
 
 Ссылка на запущенное веб-приложение ([ссылка](https://medphisiker-emotion-streamlit-app-streamlit-start-n8kbdm.streamlit.app/)).
+
 Ссылка на репозиторий для веб-приложения ([ссылка](https://github.com/medphisiker/emotion_streamlit_app)).
 
 # Продукт для бизнеса
