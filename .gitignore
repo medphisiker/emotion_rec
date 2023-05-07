@@ -1,5 +1,14 @@
+# ignoring datasets
 *RAVDESS*
 *CelebA*
-FEC_dataset
-VGG-Face2
-lightning_logs
+*FEC_dataset*
+*VGG-Face2*
+
+# ignoring cache
+*__pycache__*
+
+# ignoring logs
+*lightning_logs*
+
+# ignoring the model files
+*.pth
