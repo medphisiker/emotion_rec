@@ -6,7 +6,29 @@ from torchmetrics.classification import F1Score
 
 
 class LitModel(pl.LightningModule):
-    def __init__(self, input_shape, classes_num, learning_rate=1e-4, fc_only=False):
+    """Класс нейросети-классификатора картинок для Lightning.
+    """
+
+    def __init__(self,
+                 input_shape,
+                 classes_num,
+                 learning_rate=1e-4,
+                 fc_only=False):
+        """Инициализатор класса.
+
+        Parameters
+        ----------
+        input_shape : tuple
+            shape картинки на которые обучена нейронная сеть
+        classes_num : int
+            число классов для классификации
+        learning_rate : float, optional
+            learning_rate который используется при обучении нейросети,
+            by default 1e-4
+        fc_only : bool, optional
+            флаг на обучение только классификатора нейросети, by default False
+        """
+
         super().__init__()
 
         # метрика
@@ -29,6 +51,9 @@ class LitModel(pl.LightningModule):
         self.metric = f1
 
     def set_trainable_fc_only(self):
+        """Заморозить веса feature extractor и оставить обучаемым только
+        классификатор нейросети.
+        """
         # freeze params всей нейросети
         for param in self.neural_net.parameters():
             param.requires_grad = False
@@ -37,11 +62,38 @@ class LitModel(pl.LightningModule):
         for param in self.neural_net.parameters():
             param.requires_grad = True
 
-    # will be used during inference
     def forward(self, x):
+        """Прямой проход через модель.
+
+        Parameters
+        ----------
+        x : torch.tensor
+            batch обучающих картинок
+
+        Returns
+        -------
+        torch.tensor
+            логиты нейросети
+        """
         return self.neural_net(x)
 
-    def training_step(self, batch, batch_idx):
+    def training_step(self,
+                      batch,
+                      batch_idx):
+        """Выполняет обучение на одном batch
+
+        Parameters
+        ----------
+        batch : torch.tensor
+            batch обучающих картинок
+        batch_idx : int
+            индекс батча
+
+        Returns
+        -------
+        torch.tensor
+            полученное значение loss-функции
+        """
         x, y = batch
         y_pred = self.forward(x)
 
@@ -59,7 +111,24 @@ class LitModel(pl.LightningModule):
 
         return loss
 
-    def validation_step(self, batch, batch_idx):
+    def validation_step(self,
+                        batch,
+                        batch_idx):
+        """Выполняет валидацию на одном batch
+
+        Parameters
+        ----------
+        batch : torch.tensor
+            batch обучающих картинок
+        batch_idx : int
+            индекс батча
+
+        Returns
+        -------
+        torch.tensor
+            полученное значение loss-функции
+        """
+
         x, y = batch
         y_pred = self.forward(x)
 
@@ -74,14 +143,48 @@ class LitModel(pl.LightningModule):
 
         return loss
 
-    def predict_step(self, batch, batch_idx):
+    def predict_step(self,
+                     batch,
+                     batch_idx):
+        """Выполняет предсказание на одном batch. Используется для оценки
+        метрик.
+
+        Parameters
+        ----------
+        batch : torch.tensor
+            batch обучающих картинок
+        batch_idx : int
+            индекс батча
+
+        Returns
+        -------
+        list
+            метки классов от нейросети
+        """
 
         x, y = batch
         pred = self.forward(x)
         preds = torch.argmax(pred, dim=1)
+
         return preds.tolist()
 
-    def test_step(self, batch, batch_idx):
+    def test_step(self,
+                  batch,
+                  batch_idx):
+        """Выполняет предсказание на одном тестовом batch
+
+        Parameters
+        ----------
+        batch : torch.tensor
+            batch обучающих картинок
+        batch_idx : int
+            индекс батча
+
+        Returns
+        -------
+        torch.tensor
+            полученное значение loss-функции
+        """
         x, y = batch
         y_pred = self.forward(x)
 
@@ -93,6 +196,13 @@ class LitModel(pl.LightningModule):
         return {"loss": loss, "outputs": preds, "gt": y}
 
     def test_epoch_end(self, outputs):
+        """Анализ метрик полученных на всей эпохе валидации.
+
+        Parameters
+        ----------
+        outputs : torch.tensor
+            логиты от нейросети
+        """
         loss = torch.stack([x['loss'].float() for x in outputs]).mean()
         output = torch.cat([x['outputs'].float() for x in outputs], dim=0)
 
@@ -106,4 +216,12 @@ class LitModel(pl.LightningModule):
         self.test_output = output
 
     def configure_optimizers(self):
-        return torch.optim.Adam(self.parameters(), lr=self.learning_rate)
+        """Создает объект оптимизатора Adam для обучения нейросети
+
+        Returns
+        -------
+        torch.optimizer
+            объект оптимизатора Adam для обучения нейросети
+        """
+        return torch.optim.Adam(self.parameters(),
+                                lr=self.learning_rate)

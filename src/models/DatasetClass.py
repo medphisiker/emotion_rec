@@ -8,19 +8,65 @@ from torchvision import transforms
 
 
 def df_get_classes(df):
+    """Получить число классов в нашем датасета
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        pandas.DataFrame содержаний аннотации нашего датасета.
+
+    Returns
+    -------
+    int
+        число классов в нашем датасете
+    """
     return len(df.emotion_class.unique())
 
 
-def df_change_paths(df, path, path_col):
+def df_change_paths(df,
+                    path,
+                    path_col):
+    """Изменить пути к картинкам относительно корневой папки
+    датасета в df на пути относительно каталога проекта
+
+    Parameters
+    ----------
+    df : pandas.DataFrame
+        pandas.DataFrame содержаний аннотации нашего датасета.
+    path : str
+        путь к папке с датасетом относительно каталога проекта
+    path_col : str
+        название столбца, содержащего пути к картинкам в файле аннотаций.
+    """
     df[path_col] = path + '/' + df[path_col]
 
 
-def read_and_preprocess_annotation(path2datset, rel_path2_train):
+def read_and_preprocess_annotation(path2datset,
+                                   rel_path2_train):
+    """Загружет и выполняет необходимую предобработку файлов аннотаций
+    датасета.
+
+    Parameters
+    ----------
+    path2datset : str
+        путь к папке с датасетом относительно каталога проекта
+    rel_path2_train : str
+        относительный путь к файлу аннотации подвыборки нашего датасета.
+        Например, 'train.csv'
+
+    Returns
+    -------
+    pandas.DataFrame
+        pandas.DataFrame содержаний аннотации нашего датасета,
+        предобработанный для обучения модели-классификатора картинок.
+    """
     path2train = os.path.join(path2datset, rel_path2_train)
     df_train = pd.read_csv(path2train)
 
     # меняем пути
-    df_change_paths(df_train, path2datset, path_col='image_path')
+    df_change_paths(df_train,
+                    path2datset,
+                    path_col='image_path')
 
     # чтобы метки классы начались с 0, а не с 1-го.
     df_train.emotion_class -= 1
@@ -34,7 +80,33 @@ class ClassificationDataset(Dataset):
     аугментации и преобразование в тензоры PyTorch
     """
 
-    def __init__(self, img_paths, target, mode, rescale_size):
+    def __init__(self,
+                 img_paths,
+                 target,
+                 mode,
+                 rescale_size):
+        """Инициализатор нашего класса.
+
+        Parameters
+        ----------
+        img_paths : list
+            массив строк содержащих названий к картинкам датасета
+        target : str
+            название столбца таблицы файла аннотаций, содержащих 
+            значение целевой переменной.
+        mode : str
+            название подвыборки датасета, - 'train', 'val', 'test'.
+        rescale_size : tuple
+            shape изображения к которому будет произведен resize
+            исходного изображения.
+
+        Raises
+        ------
+        NameError
+            Поднимает ошибку если название подвыборки не совпадает
+            с одним из 3х возможных, - 'train', 'val', 'test'.
+        """
+
         super().__init__()
         # список файлов для загрузки
         self.files = img_paths
@@ -60,6 +132,18 @@ class ClassificationDataset(Dataset):
         return self.len_
 
     def load_sample(self, file):
+        """Загружаем картинку
+
+        Parameters
+        ----------
+        file : str
+            путь к картинке и датасета
+
+        Returns
+        -------
+        np.array
+            2d np.array представляющий собой картинку считаную PIL
+        """
         image = Image.open(file)
         image.load()
         return image
@@ -132,7 +216,42 @@ class ClassificationDataset(Dataset):
 
 
 class ClassificationDataModule(pl.LightningDataModule):
-    def __init__(self, df_train, df_val, df_test, img_path_col, target_col, rescale_size, batch_size, num_workers):
+    """Создает Lightning Datamodule, который будет загружать данные
+    из нашего датасета.
+    """
+
+    def __init__(self,
+                 df_train,
+                 df_val,
+                 df_test,
+                 img_path_col,
+                 target_col,
+                 rescale_size,
+                 batch_size,
+                 num_workers):
+        """_summary_
+
+        Parameters
+        ----------
+        df_train : pandas.DataFrame
+            pandas.DataFrame содержащий аннотацию для подвыборки train датасета
+        df_val : pandas.DataFrame
+            pandas.DataFrame содержащий аннотацию для подвыборки val датасета
+        df_test : pandas.DataFrame
+            pandas.DataFrame содержащий аннотацию для подвыборки test датасета
+        img_path_col : str
+            название столбца содержащего путь к картинке из датасета
+        target_col : str
+            название столбца содержащего значение целевой переменной
+        rescale_size : tuple
+            shape изображения к которому будет произведен resize
+            исходного изображения.
+        batch_size : int
+            размер batch используемого при обучении нейросети
+        num_workers : int
+            число потоков осуществляющих загрузку данных из датасета
+        """
+
         super().__init__()
 
         # задаем параметры даталоадера
