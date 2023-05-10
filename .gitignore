@@ -1,0 +1,9 @@
+# ignoring cache
+*__pycache__*
+
+# ignoring logs
+*lightning_logs*
+
+# ignoring the model files
+*.pth
+*.ckpt
