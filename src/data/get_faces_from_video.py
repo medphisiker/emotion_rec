@@ -9,7 +9,26 @@ import mediapipe as mp
 import tqdm
 
 
-def get_bbox(img_height, img_width, detection):
+def get_bbox(img_height,
+             img_width,
+             detection):
+    """Переводит нормализованные координаты bbox от face detector'a
+    из mediapipe в координаты bbox в пикселях изображения
+
+    Parameters
+    ----------
+    img_height : int
+        высота изображения в пикселях
+    img_width : int
+        ширина изображения в пикселях
+    detection : mediapipe detections struct
+        структура хранящая детекции лиц людей от face detector
+
+    Returns
+    -------
+    (height, width, xmin, ymin)
+        координаты bbox в пикселях изображения
+    """
     bbox = detection.location_data.relative_bounding_box
     height = int(bbox.height * img_height)
     width = int(bbox.width * img_width)
@@ -19,12 +38,21 @@ def get_bbox(img_height, img_width, detection):
     return height, width, xmin, ymin
 
 
-def runOnVideo(video, maxFrames):
+def runOnVideo(video,
+               max_frames):
     """Генератор кадров из видео. Продолжает генерировать кадры 
     пока не достигнуто количество кадров maxFrames.
-    """
 
-    readFrames = 0
+    Parameters
+    ----------
+    video : cv2.VideoCapture object
+        объект видео прочитанного OpenCV
+    max_frames : int
+        количество кадров после которого нужно остановить покадровое
+        чтение видео.
+
+    """
+    read_frames = 0
     while True:
         hasFrame, frame = video.read()
         if not hasFrame:
@@ -32,14 +60,14 @@ def runOnVideo(video, maxFrames):
 
         yield frame
 
-        readFrames += 1
-        if readFrames > maxFrames:
+        read_frames += 1
+        if read_frames > max_frames:
             break
 
 
-path_video_folder = 'RAVDESS_frames'
+path_video_folder = 'data/interim/RAVDESS_frames'
 video_ext = '.mp4'
-result_dataset_path = 'RAVDESS_frames_set'
+result_dataset_path = 'data/processed/RAVDESS_frames_set'
 every_frame = 5
 subsets = {'train': set(range(1, 19 + 1)),
            'test': set(range(20, 24 + 1))}
@@ -47,23 +75,25 @@ subsets = {'train': set(range(1, 19 + 1)),
 # создаем каталог для хранения датасета из кадров видео
 if not os.path.exists(result_dataset_path):
     os.makedirs(result_dataset_path)
-    
+
 train_path = os.path.join(result_dataset_path, 'train')
 if not os.path.exists(train_path):
     os.makedirs(train_path)
-    
+
 test_path = os.path.join(result_dataset_path, 'test')
 if not os.path.exists(test_path):
     os.makedirs(test_path)
-    
+
 # MediaPipe solution API
 mp_face_detection = mp.solutions.face_detection
 
 # Run MediaPipe Face Detection with short range model.
-face_detection = mp_face_detection.FaceDetection(
-    min_detection_confidence=0.5, model_selection=1)
+face_detection = mp_face_detection.FaceDetection(min_detection_confidence=0.5,
+                                                 model_selection=1)
 
-search_path = os.path.join(path_video_folder, f'*{video_ext}')
+search_path = os.path.join(path_video_folder,
+                           f'*{video_ext}')
+
 video_paths = glob.glob(search_path)
 
 for path_video in video_paths:
@@ -90,8 +120,9 @@ for path_video in video_paths:
             # сохраняем crop с лицами в датасет
             if results.detections:
                 for idx, detection in enumerate(results.detections):
-                    height, width, xmin, ymin = get_bbox(
-                        img_height, img_width, detection)
+                    height, width, xmin, ymin = get_bbox(img_height,
+                                                         img_width,
+                                                         detection)
 
                     frame_name = f'{video_name}_frame_{frame_num}_{idx}.png'
                     frame_path = ''
@@ -99,9 +130,10 @@ for path_video in video_paths:
                         frame_path = os.path.join(train_path, frame_name)
                     elif actor_num in subsets['test']:
                         frame_path = os.path.join(test_path, frame_name)
-                    
+
                     if frame_path:
-                        cv2.imwrite(frame_path, frame[ymin:ymin+height, xmin:xmin+width])
+                        cv2.imwrite(frame_path,
+                                    frame[ymin:ymin+height, xmin:xmin+width])
 
         frame_num += 1
 

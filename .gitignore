@@ -1,9 +1,3 @@
-# ignoring datasets
-*RAVDESS*
-*CelebA*
-*FEC_dataset*
-*VGG-Face2*
-
 # ignoring cache
 *__pycache__*
 
@@ -12,3 +6,4 @@
 
 # ignoring the model files
 *.pth
+*.ckpt

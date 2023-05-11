@@ -58,9 +58,9 @@ import zipfile
 
 
 # разархивируем весь датасет
-ravdess_path = "RAVDESS"
+ravdess_path = "data/raw/RAVDESS"
 extension = '.zip'
-extract_folder = 'RAVDESS_frames'
+extract_folder = 'data/interim/RAVDESS_frames'
 
 mask_path = os.path.join(ravdess_path, f'*{extension}')
 zip_files = glob.glob(mask_path)

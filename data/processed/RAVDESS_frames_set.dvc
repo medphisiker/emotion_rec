@@ -1,0 +1,5 @@
+outs:
+- md5: b0d82c1a4e5421d4dfeb260cd9c0625a.dir
+  size: 3369541613
+  nfiles: 15808
+  path: RAVDESS_frames_set
